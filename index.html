@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>С 8 Марта — Арайлым</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --deep-wine: #1a0a10;
+  --midnight-rose: #2a0f1e;
+  --rose-dark: #6b1d3a;
+  --rose-mid: #a4294e;
+  --blush: #d4738c;
+  --blush-light: #f0c4d4;
+  --ivory: #fdf6f0;
+  --gold: #d4a853;
+  --gold-light: #f0d48a;
+  --gold-glow: rgba(212, 168, 83, 0.4);
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: 'Raleway', sans-serif;
+}
+
+body {
+  background: var(--deep-wine);
+  background: radial-gradient(ellipse at 30% 20%, #2e1225 0%, var(--deep-wine) 50%, #0d050a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+}
+
+/* ── Sparkle canvas ── */
+#sparkle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Floating petals ── */
+.petal {
+  position: fixed;
+  top: -60px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.petal svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg) translateX(0px);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(var(--rot-end, 360deg)) translateX(var(--drift, 80px));
+    opacity: 0;
+  }
+}
+
+/* ── Card ── */
+.card-wrapper {
+  position: relative;
+  z-index: 10;
+  perspective: 1000px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.card {
+  position: relative;
+  background: linear-gradient(170deg, rgba(42, 15, 30, 0.95) 0%, rgba(26, 10, 16, 0.98) 100%);
+  border-radius: 20px;
+  padding: clamp(36px, 7vw, 60px) clamp(28px, 6vw, 56px);
+  text-align: center;
+  color: var(--ivory);
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out, box-shadow 0.4s ease;
+  will-change: transform;
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 83, 0.15),
+    0 4px 30px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(107, 29, 58, 0.2);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.5) 0%, rgba(212, 168, 83, 0.05) 40%, rgba(212, 168, 83, 0.05) 60%, rgba(212, 168, 83, 0.3) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* soft ambient glow inside card */
+.card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 50% 30%, rgba(212, 168, 83, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+
+.card:hover::after {
+  opacity: 1.8;
+}
+
+.card:hover {
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 83, 0.25),
+    0 8px 50px rgba(0, 0, 0, 0.6),
+    0 0 120px rgba(107, 29, 58, 0.35),
+    0 0 40px rgba(212, 168, 83, 0.08);
+}
+
+/* ── Content sections ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s cubic-bezier(0.23, 1, 0.32, 1), transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Header */
+.header-date {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 200;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.header-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  color: var(--ivory);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: clamp(20px, 4vw, 32px) 0;
+  color: var(--gold);
+  opacity: 0.5;
+}
+
+.divider-line {
+  width: clamp(30px, 8vw, 60px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.divider-symbol {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* Name */
+.name-section {
+  margin: clamp(8px, 2vw, 12px) 0;
+}
+
+.name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: clamp(3rem, 10vw, 4.5rem);
+  color: var(--gold-light);
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 0 30px var(--gold-glow),
+    0 0 60px rgba(212, 168, 83, 0.2),
+    0 0 100px rgba(212, 168, 83, 0.1);
+  animation: nameGlow 3s ease-in-out infinite;
+  position: relative;
+  display: inline-block;
+}
+
+@keyframes nameGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 30px var(--gold-glow),
+      0 0 60px rgba(212, 168, 83, 0.2),
+      0 0 100px rgba(212, 168, 83, 0.1);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow:
+      0 0 40px rgba(212, 168, 83, 0.6),
+      0 0 80px rgba(212, 168, 83, 0.3),
+      0 0 120px rgba(212, 168, 83, 0.15);
+    filter: brightness(1.08);
+  }
+}
+
+/* Message */
+.message {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(1.05rem, 3vw, 1.3rem);
+  color: var(--blush-light);
+  line-height: 1.7;
+  max-width: 380px;
+  margin: 0 auto;
+  letter-spacing: 0.01em;
+}
+
+/* Footer */
+.footer {
+  margin-top: clamp(16px, 3vw, 24px);
+}
+
+.footer-flower {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  opacity: 0.7;
+  display: inline-block;
+  animation: gentleSway 4s ease-in-out infinite;
+}
+
+@keyframes gentleSway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 5vh;
+  }
+
+  .card {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .card {
+    padding: 28px 20px;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .petal, .reveal, .card, .name, .footer-flower {
+    animation: none !important;
+    transition: none !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="sparkle-canvas"></canvas>
+
+<div class="card-wrapper">
+  <div class="card" id="card">
+
+    <div class="reveal" data-delay="200">
+      <div class="header-date">8 марта</div>
+      <div class="header-main">С Международным<br>женским днём</div>
+    </div>
+
+    <div class="divider reveal" data-delay="600">
+      <span class="divider-line"></span>
+      <span class="divider-symbol">✿</span>
+      <span class="divider-line"></span>
+    </div>
+
+    <div class="name-section reveal" data-delay="900">
+      <div class="name">Арайлым</div>
+    </div>
+
+    <div class="divider reveal" data-delay="1200">
+      <span class="divider-line"></span>
+      <span class="divider-symbol">❧</span>
+      <span class="divider-line"></span>
+    </div>
+
+    <div class="message reveal" data-delay="1400">
+      Приятно было познакомиться.<br>
+      Надеюсь, этот день подарит тебе<br>
+      столько же тепла, сколько ты<br>
+      дарёшь окружающим.
+    </div>
+
+    <div class="footer reveal" data-delay="1800">
+      <span class="footer-flower">✾</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Detect mobile ──
+  const isMobile = window.innerWidth <= 600;
+  const PETAL_COUNT = isMobile ? 10 : 18;
+
+  // ── Staggered reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  reveals.forEach(el => {
+    const delay = parseInt(el.dataset.delay) || 0;
+    setTimeout(() => el.classList.add('visible'), delay);
+  });
+
+  // ── Petal system ──
+  const petalColors = [
+    { fill: '#d4738c', opacity: 0.7 },
+    { fill: '#a4294e', opacity: 0.6 },
+    { fill: '#f0c4d4', opacity: 0.5 },
+    { fill: '#e8a0b4', opacity: 0.65 },
+    { fill: '#c25577', opacity: 0.55 },
+  ];
+
+  const petalPaths = [
+    'M10 0 C15 4, 20 14, 10 20 C0 14, 5 4, 10 0Z',
+    'M10 0 C18 5, 18 15, 10 20 C2 15, 2 5, 10 0Z',
+    'M10 0 C16 3, 22 12, 10 20 C-2 12, 4 3, 10 0Z',
+  ];
+
+  let hoverActive = false;
+
+  function createPetal() {
+    const petal = document.createElement('div');
+    petal.className = 'petal';
+
+    const size = 14 + Math.random() * 22;
+    const color = petalColors[Math.floor(Math.random() * petalColors.length)];
+    const path = petalPaths[Math.floor(Math.random() * petalPaths.length)];
+
+    petal.innerHTML = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="${path}" fill="${color.fill}" opacity="${color.opacity}"/></svg>`;
+
+    petal.style.width = size + 'px';
+    petal.style.height = size + 'px';
+    petal.style.left = Math.random() * 100 + 'vw';
+
+    const drift = -80 + Math.random() * 160;
+    const rotEnd = 180 + Math.random() * 540;
+    const baseDuration = hoverActive ? 6 : 10;
+    const duration = baseDuration + Math.random() * 8;
+
+    petal.style.setProperty('--drift', drift + 'px');
+    petal.style.setProperty('--rot-end', rotEnd + 'deg');
+    petal.style.animation = `fall ${duration}s linear forwards`;
+    petal.style.animationDelay = Math.random() * 2 + 's';
+
+    document.body.appendChild(petal);
+
+    setTimeout(() => {
+      if (petal.parentNode) petal.parentNode.removeChild(petal);
+    }, (duration + 3) * 1000);
+  }
+
+  // Initial burst
+  for (let i = 0; i < PETAL_COUNT; i++) {
+    setTimeout(createPetal, i * 300);
+  }
+
+  // Continuous petals
+  setInterval(createPetal, isMobile ? 1200 : 700);
+
+  // ── Sparkle canvas ──
+  const canvas = document.getElementById('sparkle-canvas');
+  const ctx = canvas.getContext('2d');
+  let sparkles = [];
+  const SPARKLE_COUNT = isMobile ? 25 : 50;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function createSparkle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: 0.5 + Math.random() * 2,
+      alpha: 0,
+      alphaTarget: 0.3 + Math.random() * 0.7,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.3 + Math.random() * 1.2,
+      life: 0,
+      maxLife: 120 + Math.random() * 200,
+    };
+  }
+
+  for (let i = 0; i < SPARKLE_COUNT; i++) {
+    const s = createSparkle();
+    s.life = Math.random() * s.maxLife;
+    sparkles.push(s);
+  }
+
+  function drawSparkles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.life++;
+      s.phase += 0.04 * s.speed;
+
+      const lifeFrac = s.life / s.maxLife;
+      if (lifeFrac < 0.15) {
+        s.alpha = s.alphaTarget * (lifeFrac / 0.15);
+      } else if (lifeFrac > 0.8) {
+        s.alpha = s.alphaTarget * (1 - (lifeFrac - 0.8) / 0.2);
+      } else {
+        s.alpha = s.alphaTarget * (0.5 + 0.5 * Math.sin(s.phase));
+      }
+
+      if (s.life >= s.maxLife) {
+        sparkles[i] = createSparkle();
+        continue;
+      }
+
+      const glowAlpha = s.alpha * 0.3;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(240, 212, 138, ${glowAlpha})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 248, 230, ${s.alpha})`;
+      ctx.fill();
+
+      // cross sparkle for brighter ones
+      if (s.alphaTarget > 0.6 && s.alpha > 0.3) {
+        ctx.strokeStyle = `rgba(255, 248, 230, ${s.alpha * 0.4})`;
+        ctx.lineWidth = 0.5;
+        const len = s.size * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(s.x - len, s.y);
+        ctx.lineTo(s.x + len, s.y);
+        ctx.moveTo(s.x, s.y - len);
+        ctx.lineTo(s.x, s.y + len);
+        ctx.stroke();
+      }
+    }
+
+    requestAnimationFrame(drawSparkles);
+  }
+  requestAnimationFrame(drawSparkles);
+
+  // ── Parallax tilt ──
+  const card = document.getElementById('card');
+  const wrapper = document.querySelector('.card-wrapper');
+
+  if (!isMobile) {
+    // Mouse parallax
+    wrapper.addEventListener('mouseenter', () => { hoverActive = true; });
+    wrapper.addEventListener('mouseleave', () => {
+      hoverActive = false;
+      card.style.transform = 'rotateX(0) rotateY(0)';
+    });
+
+    wrapper.addEventListener('mousemove', (e) => {
+      const rect = wrapper.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((y - centerY) / centerY) * -6;
+      const rotateY = ((x - centerX) / centerX) * 6;
+      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+  } else {
+    // Gyroscope tilt for mobile
+    let gyroAvailable = false;
+
+    function handleOrientation(e) {
+      if (!gyroAvailable) gyroAvailable = true;
+      const beta = Math.max(-15, Math.min(15, e.beta || 0));
+      const gamma = Math.max(-15, Math.min(15, e.gamma || 0));
+      const rotateX = (beta / 15) * 4;
+      const rotateY = (gamma / 15) * 4;
+      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ requires permission
+      document.body.addEventListener('touchstart', function iosPerm() {
+        DeviceOrientationEvent.requestPermission().then(state => {
+          if (state === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          }
+        }).catch(() => {});
+        document.body.removeEventListener('touchstart', iosPerm);
+      }, { once: true });
+    } else if ('DeviceOrientationEvent' in window) {
+      window.addEventListener('deviceorientation', handleOrientation);
+    }
+
+    // Touch "hover" effect
+    card.addEventListener('touchstart', () => { hoverActive = true; }, { passive: true });
+    card.addEventListener('touchend', () => { hoverActive = false; }, { passive: true });
+  }
+
+})();
+</script>
+</body>
+</html>
