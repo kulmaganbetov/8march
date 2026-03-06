@@ -76,14 +76,12 @@ body {
   z-index: 2;
   opacity: 0;
   will-change: transform, opacity;
-  cursor: pointer;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .petal svg {
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
 @keyframes fall {
@@ -679,181 +677,6 @@ body {
   const isMobile = window.innerWidth <= 600;
   const PETAL_COUNT = isMobile ? 10 : 18;
 
-  // ══════════════════════════════════════
-  // ── Web Audio API: Music Box & Chime ──
-  // ══════════════════════════════════════
-  let audioCtx = null;
-  let musicStarted = false;
-
-  function getAudioCtx() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    return audioCtx;
-  }
-
-  // Music box melody — a gentle, intimate tune in D major
-  function playMusicBox() {
-    if (musicStarted) return;
-    musicStarted = true;
-
-    const ctx = getAudioCtx();
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = 0.12;
-    masterGain.connect(ctx.destination);
-
-    // Reverb via convolver (simple impulse)
-    let reverbNode;
-    try {
-      reverbNode = ctx.createConvolver();
-      const rate = ctx.sampleRate;
-      const length = rate * 2;
-      const impulse = ctx.createBuffer(2, length, rate);
-      for (let ch = 0; ch < 2; ch++) {
-        const data = impulse.getChannelData(ch);
-        for (let i = 0; i < length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
-        }
-      }
-      reverbNode.buffer = impulse;
-      const dryGain = ctx.createGain();
-      dryGain.gain.value = 0.7;
-      const wetGain = ctx.createGain();
-      wetGain.gain.value = 0.3;
-      masterGain.connect(dryGain);
-      masterGain.connect(reverbNode);
-      reverbNode.connect(wetGain);
-      dryGain.connect(ctx.destination);
-      wetGain.connect(ctx.destination);
-    } catch(e) {
-      masterGain.connect(ctx.destination);
-    }
-
-    // Note frequencies
-    const notes = {
-      D4: 293.66, E4: 329.63, Fs4: 369.99, G4: 392.00,
-      A4: 440.00, B4: 493.88, Cs5: 554.37, D5: 587.33,
-      E5: 659.25, Fs5: 739.99, A5: 880.00
-    };
-
-    // Gentle melody — like a music box playing a lullaby
-    const melody = [
-      // phrase 1
-      { note: 'Fs5', time: 0.0,  dur: 0.5 },
-      { note: 'E5',  time: 0.5,  dur: 0.5 },
-      { note: 'D5',  time: 1.0,  dur: 0.7 },
-      { note: 'A4',  time: 1.7,  dur: 0.5 },
-      { note: 'B4',  time: 2.2,  dur: 0.8 },
-      // phrase 2
-      { note: 'D5',  time: 3.2,  dur: 0.5 },
-      { note: 'Cs5', time: 3.7,  dur: 0.5 },
-      { note: 'A4',  time: 4.2,  dur: 0.7 },
-      { note: 'Fs4', time: 4.9,  dur: 0.5 },
-      { note: 'G4',  time: 5.4,  dur: 0.8 },
-      // phrase 3 — higher, hopeful
-      { note: 'A4',  time: 6.5,  dur: 0.4 },
-      { note: 'B4',  time: 6.9,  dur: 0.4 },
-      { note: 'D5',  time: 7.3,  dur: 0.5 },
-      { note: 'Fs5', time: 7.8,  dur: 0.5 },
-      { note: 'E5',  time: 8.3,  dur: 0.9 },
-      // phrase 4 — resolution
-      { note: 'D5',  time: 9.5,  dur: 0.5 },
-      { note: 'B4',  time: 10.0, dur: 0.5 },
-      { note: 'A4',  time: 10.5, dur: 0.6 },
-      { note: 'Fs4', time: 11.1, dur: 0.4 },
-      { note: 'D4',  time: 11.5, dur: 1.5 },
-      // gentle ending
-      { note: 'A4',  time: 13.2, dur: 0.5 },
-      { note: 'Fs5', time: 13.7, dur: 0.5 },
-      { note: 'D5',  time: 14.2, dur: 2.0 },
-    ];
-
-    const now = ctx.currentTime + 0.1;
-
-    melody.forEach(({ note, time, dur }) => {
-      const freq = notes[note];
-      if (!freq) return;
-
-      // Main tone (triangle for music box character)
-      const osc1 = ctx.createOscillator();
-      osc1.type = 'triangle';
-      osc1.frequency.value = freq;
-
-      // Subtle harmonic (sine an octave up, very quiet)
-      const osc2 = ctx.createOscillator();
-      osc2.type = 'sine';
-      osc2.frequency.value = freq * 2;
-
-      const env = ctx.createGain();
-      env.gain.value = 0;
-      // Music box: sharp attack, gentle decay
-      env.gain.setValueAtTime(0, now + time);
-      env.gain.linearRampToValueAtTime(0.6, now + time + 0.015);
-      env.gain.exponentialRampToValueAtTime(0.25, now + time + 0.15);
-      env.gain.exponentialRampToValueAtTime(0.01, now + time + dur + 0.3);
-
-      const env2 = ctx.createGain();
-      env2.gain.value = 0;
-      env2.gain.setValueAtTime(0, now + time);
-      env2.gain.linearRampToValueAtTime(0.15, now + time + 0.01);
-      env2.gain.exponentialRampToValueAtTime(0.01, now + time + dur * 0.6);
-
-      osc1.connect(env);
-      osc2.connect(env2);
-      env.connect(masterGain);
-      env2.connect(masterGain);
-
-      osc1.start(now + time);
-      osc1.stop(now + time + dur + 0.5);
-      osc2.start(now + time);
-      osc2.stop(now + time + dur + 0.5);
-    });
-  }
-
-  // Chime sound when tapping a petal
-  function playChime() {
-    try {
-      const ctx = getAudioCtx();
-      // Random pentatonic note for variety
-      const chimeFreqs = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
-      const freq = chimeFreqs[Math.floor(Math.random() * chimeFreqs.length)];
-
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-
-      const osc2 = ctx.createOscillator();
-      osc2.type = 'sine';
-      osc2.frequency.value = freq * 2.01; // slight detune for shimmer
-
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-      const now = ctx.currentTime;
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.08, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-
-      const gain2 = ctx.createGain();
-      gain2.gain.value = 0;
-      gain2.gain.setValueAtTime(0, now);
-      gain2.gain.linearRampToValueAtTime(0.03, now + 0.005);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-
-      osc.connect(gain);
-      osc2.connect(gain2);
-      gain.connect(ctx.destination);
-      gain2.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 1);
-      osc2.start(now);
-      osc2.stop(now + 0.7);
-    } catch(e) {}
-  }
-
   // ═══════════════════════════════
   // ── Envelope opening sequence ──
   // ═══════════════════════════════
@@ -865,9 +688,6 @@ body {
   function openEnvelope() {
     if (envelopeOpened) return;
     envelopeOpened = true;
-
-    // Start music on first interaction
-    playMusicBox();
 
     // 1. Open flap
     envelope.classList.add('opened');
@@ -941,30 +761,6 @@ body {
     petal.style.setProperty('--rot-end', rotEnd + 'deg');
     petal.style.animation = `fall ${duration}s linear forwards`;
     petal.style.animationDelay = Math.random() * 2 + 's';
-
-    // Chime on tap
-    petal.addEventListener('click', (e) => {
-      e.stopPropagation();
-      playChime();
-      // Visual burst — scale up briefly
-      petal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      petal.style.transform += ' scale(1.8)';
-      petal.style.opacity = '0';
-      setTimeout(() => {
-        if (petal.parentNode) petal.parentNode.removeChild(petal);
-      }, 300);
-    });
-
-    petal.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      playChime();
-      petal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      petal.style.opacity = '0';
-      setTimeout(() => {
-        if (petal.parentNode) petal.parentNode.removeChild(petal);
-      }, 300);
-    });
 
     document.body.appendChild(petal);
 
