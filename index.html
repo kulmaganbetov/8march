@@ -44,6 +44,20 @@ body {
   position: relative;
 }
 
+/* ── Vignette overlay ── */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at 50% 50%,
+    transparent 30%,
+    rgba(10, 4, 8, 0.3) 60%,
+    rgba(5, 2, 4, 0.7) 85%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+}
+
 /* ── Sparkle canvas ── */
 #sparkle-canvas {
   position: fixed;
@@ -59,15 +73,17 @@ body {
 .petal {
   position: fixed;
   top: -60px;
-  pointer-events: none;
   z-index: 2;
   opacity: 0;
   will-change: transform, opacity;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .petal svg {
   width: 100%;
   height: 100%;
+  pointer-events: none;
 }
 
 @keyframes fall {
@@ -75,27 +91,262 @@ body {
     transform: translateY(-10vh) rotate(0deg) translateX(0px);
     opacity: 0;
   }
-  5% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
+  5% { opacity: 1; }
+  85% { opacity: 1; }
   100% {
     transform: translateY(110vh) rotate(var(--rot-end, 360deg)) translateX(var(--drift, 80px));
     opacity: 0;
   }
 }
 
-/* ── Card ── */
-.card-wrapper {
+/* ── Envelope ── */
+.envelope-scene {
   position: relative;
   z-index: 10;
-  perspective: 1000px;
+  perspective: 1200px;
   width: 100%;
   max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.envelope {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1.45 / 1;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.envelope:hover {
+  transform: scale(1.02);
+}
+
+.envelope.opened {
+  pointer-events: none;
+}
+
+/* Envelope body */
+.envelope-body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(175deg, #3d1a28 0%, #2a1019 60%, #1f0c14 100%);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 83, 0.12),
+    0 8px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(212, 168, 83, 0.08);
+  overflow: hidden;
+}
+
+/* Paper texture via SVG filter */
+.envelope-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+/* Gold trim lines on envelope */
+.envelope-body::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(212, 168, 83, 0.08);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Envelope flap (top triangle) */
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 52%;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+.envelope-flap-face {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #3d1a28 0%, #331620 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.envelope-flap-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+}
+
+/* Gold edge on flap */
+.envelope-flap-face::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  box-shadow: inset 0 0 0 1px rgba(212, 168, 83, 0.15);
+  pointer-events: none;
+}
+
+.envelope-flap-back {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #2a1019 0%, #1f0c14 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: rotateX(180deg);
+  backface-visibility: hidden;
+}
+
+.envelope.opened .envelope-flap {
+  transform: rotateX(-180deg);
+}
+
+/* Wax seal */
+.wax-seal {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(56px, 14vw, 76px);
+  height: clamp(56px, 14vw, 76px);
+  z-index: 10;
+  cursor: pointer;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+}
+
+.envelope.opened .wax-seal {
+  transform: translate(-50%, -50%) scale(0.5) rotate(20deg);
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+.seal-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%,
+    #c0392b 0%, #922b21 30%, #6b1d1d 70%, #4a1414 100%
+  );
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(192, 57, 43, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 200, 200, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Seal bumpy edge */
+.seal-circle::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #922b21, #6b1d1d, #922b21, #6b1d1d,
+    #922b21, #6b1d1d, #922b21, #6b1d1d,
+    #922b21, #6b1d1d, #922b21, #6b1d1d,
+    #922b21, #6b1d1d, #922b21, #6b1d1d,
+    #922b21
+  );
+  z-index: -1;
+  filter: url(#seal-edge);
+}
+
+/* Inner ring */
+.seal-circle::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 200, 200, 0.12);
+}
+
+.seal-letter {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  color: rgba(255, 220, 200, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* Tap hint */
+.tap-hint {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Raleway', sans-serif;
+  font-weight: 300;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
+  color: var(--gold);
+  opacity: 0;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  animation: hintPulse 2.5s ease-in-out infinite;
+  animation-delay: 1.5s;
+  white-space: nowrap;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0; }
+  30%, 70% { opacity: 0.6; }
+}
+
+.envelope.opened .tap-hint {
+  display: none;
+}
+
+/* ── Card wrapper (inside envelope) ── */
+.card-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 88%;
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.card-wrapper.revealed {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 520px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Card ── */
 .card {
   position: relative;
   background: linear-gradient(170deg, rgba(42, 15, 30, 0.95) 0%, rgba(26, 10, 16, 0.98) 100%);
@@ -115,8 +366,21 @@ body {
   overflow: hidden;
 }
 
+/* Paper texture on card */
 .card::before {
   content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23t)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gold border */
+.card-border {
   position: absolute;
   inset: -1px;
   border-radius: 21px;
@@ -129,9 +393,8 @@ body {
   z-index: 1;
 }
 
-/* soft ambient glow inside card */
-.card::after {
-  content: '';
+/* Soft ambient glow inside card */
+.card-glow {
   position: absolute;
   top: -50%;
   left: -50%;
@@ -141,9 +404,10 @@ body {
   pointer-events: none;
   transition: opacity 0.5s ease;
   opacity: 1;
+  z-index: 0;
 }
 
-.card:hover::after {
+.card:hover .card-glow {
   opacity: 1.8;
 }
 
@@ -160,6 +424,8 @@ body {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.9s cubic-bezier(0.23, 1, 0.32, 1), transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  z-index: 2;
 }
 
 .reveal.visible {
@@ -278,6 +544,33 @@ body {
   50% { transform: rotate(3deg); }
 }
 
+/* ── Opening animation ── */
+@keyframes envelopeFadeOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.85) translateY(30px); }
+}
+
+@keyframes cardSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.envelope.fade-out {
+  animation: envelopeFadeOut 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.6s;
+}
+
+.card-wrapper.slide-in {
+  animation: cardSlideIn 0.9s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation-delay: 1.1s;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
   body {
@@ -285,9 +578,11 @@ body {
     align-items: flex-start;
     padding-top: 5vh;
   }
-
   .card {
     border-radius: 16px;
+  }
+  .envelope-body, .envelope-flap-face {
+    border-radius: 10px;
   }
 }
 
@@ -299,20 +594,49 @@ body {
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .petal, .reveal, .card, .name, .footer-flower {
+  .petal, .reveal, .card, .name, .footer-flower, .envelope, .card-wrapper {
     animation: none !important;
     transition: none !important;
   }
   .reveal { opacity: 1; transform: none; }
 }
 </style>
+
+<!-- SVG filter for wax seal bumpy edge -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="seal-edge">
+    <feTurbulence type="turbulence" baseFrequency="0.12" numOctaves="3" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
 </head>
 <body>
 
+<div class="vignette"></div>
 <canvas id="sparkle-canvas"></canvas>
 
-<div class="card-wrapper">
+<!-- Envelope -->
+<div class="envelope-scene" id="envelope-scene">
+  <div class="envelope" id="envelope">
+    <div class="envelope-body"></div>
+    <div class="envelope-flap">
+      <div class="envelope-flap-face"></div>
+      <div class="envelope-flap-back"></div>
+    </div>
+    <div class="wax-seal" id="wax-seal">
+      <div class="seal-circle">
+        <span class="seal-letter">А</span>
+      </div>
+    </div>
+    <div class="tap-hint">нажмите</div>
+  </div>
+</div>
+
+<!-- Card (hidden initially) -->
+<div class="card-wrapper" id="card-wrapper">
   <div class="card" id="card">
+    <div class="card-border"></div>
+    <div class="card-glow"></div>
 
     <div class="reveal" data-delay="200">
       <div class="header-date">8 марта</div>
@@ -345,7 +669,6 @@ body {
     <div class="footer reveal" data-delay="1800">
       <span class="footer-flower">✾</span>
     </div>
-
   </div>
 </div>
 
@@ -353,18 +676,232 @@ body {
 (function() {
   'use strict';
 
-  // ── Detect mobile ──
   const isMobile = window.innerWidth <= 600;
   const PETAL_COUNT = isMobile ? 10 : 18;
 
-  // ── Staggered reveal ──
-  const reveals = document.querySelectorAll('.reveal');
-  reveals.forEach(el => {
-    const delay = parseInt(el.dataset.delay) || 0;
-    setTimeout(() => el.classList.add('visible'), delay);
+  // ══════════════════════════════════════
+  // ── Web Audio API: Music Box & Chime ──
+  // ══════════════════════════════════════
+  let audioCtx = null;
+  let musicStarted = false;
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  // Music box melody — a gentle, intimate tune in D major
+  function playMusicBox() {
+    if (musicStarted) return;
+    musicStarted = true;
+
+    const ctx = getAudioCtx();
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = 0.12;
+    masterGain.connect(ctx.destination);
+
+    // Reverb via convolver (simple impulse)
+    let reverbNode;
+    try {
+      reverbNode = ctx.createConvolver();
+      const rate = ctx.sampleRate;
+      const length = rate * 2;
+      const impulse = ctx.createBuffer(2, length, rate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+        }
+      }
+      reverbNode.buffer = impulse;
+      const dryGain = ctx.createGain();
+      dryGain.gain.value = 0.7;
+      const wetGain = ctx.createGain();
+      wetGain.gain.value = 0.3;
+      masterGain.connect(dryGain);
+      masterGain.connect(reverbNode);
+      reverbNode.connect(wetGain);
+      dryGain.connect(ctx.destination);
+      wetGain.connect(ctx.destination);
+    } catch(e) {
+      masterGain.connect(ctx.destination);
+    }
+
+    // Note frequencies
+    const notes = {
+      D4: 293.66, E4: 329.63, Fs4: 369.99, G4: 392.00,
+      A4: 440.00, B4: 493.88, Cs5: 554.37, D5: 587.33,
+      E5: 659.25, Fs5: 739.99, A5: 880.00
+    };
+
+    // Gentle melody — like a music box playing a lullaby
+    const melody = [
+      // phrase 1
+      { note: 'Fs5', time: 0.0,  dur: 0.5 },
+      { note: 'E5',  time: 0.5,  dur: 0.5 },
+      { note: 'D5',  time: 1.0,  dur: 0.7 },
+      { note: 'A4',  time: 1.7,  dur: 0.5 },
+      { note: 'B4',  time: 2.2,  dur: 0.8 },
+      // phrase 2
+      { note: 'D5',  time: 3.2,  dur: 0.5 },
+      { note: 'Cs5', time: 3.7,  dur: 0.5 },
+      { note: 'A4',  time: 4.2,  dur: 0.7 },
+      { note: 'Fs4', time: 4.9,  dur: 0.5 },
+      { note: 'G4',  time: 5.4,  dur: 0.8 },
+      // phrase 3 — higher, hopeful
+      { note: 'A4',  time: 6.5,  dur: 0.4 },
+      { note: 'B4',  time: 6.9,  dur: 0.4 },
+      { note: 'D5',  time: 7.3,  dur: 0.5 },
+      { note: 'Fs5', time: 7.8,  dur: 0.5 },
+      { note: 'E5',  time: 8.3,  dur: 0.9 },
+      // phrase 4 — resolution
+      { note: 'D5',  time: 9.5,  dur: 0.5 },
+      { note: 'B4',  time: 10.0, dur: 0.5 },
+      { note: 'A4',  time: 10.5, dur: 0.6 },
+      { note: 'Fs4', time: 11.1, dur: 0.4 },
+      { note: 'D4',  time: 11.5, dur: 1.5 },
+      // gentle ending
+      { note: 'A4',  time: 13.2, dur: 0.5 },
+      { note: 'Fs5', time: 13.7, dur: 0.5 },
+      { note: 'D5',  time: 14.2, dur: 2.0 },
+    ];
+
+    const now = ctx.currentTime + 0.1;
+
+    melody.forEach(({ note, time, dur }) => {
+      const freq = notes[note];
+      if (!freq) return;
+
+      // Main tone (triangle for music box character)
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'triangle';
+      osc1.frequency.value = freq;
+
+      // Subtle harmonic (sine an octave up, very quiet)
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2;
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      // Music box: sharp attack, gentle decay
+      env.gain.setValueAtTime(0, now + time);
+      env.gain.linearRampToValueAtTime(0.6, now + time + 0.015);
+      env.gain.exponentialRampToValueAtTime(0.25, now + time + 0.15);
+      env.gain.exponentialRampToValueAtTime(0.01, now + time + dur + 0.3);
+
+      const env2 = ctx.createGain();
+      env2.gain.value = 0;
+      env2.gain.setValueAtTime(0, now + time);
+      env2.gain.linearRampToValueAtTime(0.15, now + time + 0.01);
+      env2.gain.exponentialRampToValueAtTime(0.01, now + time + dur * 0.6);
+
+      osc1.connect(env);
+      osc2.connect(env2);
+      env.connect(masterGain);
+      env2.connect(masterGain);
+
+      osc1.start(now + time);
+      osc1.stop(now + time + dur + 0.5);
+      osc2.start(now + time);
+      osc2.stop(now + time + dur + 0.5);
+    });
+  }
+
+  // Chime sound when tapping a petal
+  function playChime() {
+    try {
+      const ctx = getAudioCtx();
+      // Random pentatonic note for variety
+      const chimeFreqs = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+      const freq = chimeFreqs[Math.floor(Math.random() * chimeFreqs.length)];
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2.01; // slight detune for shimmer
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+      const gain2 = ctx.createGain();
+      gain2.gain.value = 0;
+      gain2.gain.setValueAtTime(0, now);
+      gain2.gain.linearRampToValueAtTime(0.03, now + 0.005);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+      osc.connect(gain);
+      osc2.connect(gain2);
+      gain.connect(ctx.destination);
+      gain2.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1);
+      osc2.start(now);
+      osc2.stop(now + 0.7);
+    } catch(e) {}
+  }
+
+  // ═══════════════════════════════
+  // ── Envelope opening sequence ──
+  // ═══════════════════════════════
+  const envelope = document.getElementById('envelope');
+  const envelopeScene = document.getElementById('envelope-scene');
+  const cardWrapper = document.getElementById('card-wrapper');
+  let envelopeOpened = false;
+
+  function openEnvelope() {
+    if (envelopeOpened) return;
+    envelopeOpened = true;
+
+    // Start music on first interaction
+    playMusicBox();
+
+    // 1. Open flap
+    envelope.classList.add('opened');
+
+    // 2. After flap opens, fade out envelope & slide in card
+    setTimeout(() => {
+      envelope.classList.add('fade-out');
+      cardWrapper.classList.add('slide-in');
+      cardWrapper.style.display = '';
+    }, 600);
+
+    // 3. Hide envelope fully, position card
+    setTimeout(() => {
+      envelopeScene.style.display = 'none';
+      cardWrapper.classList.add('revealed');
+
+      // Trigger staggered text reveals
+      const reveals = document.querySelectorAll('.reveal');
+      reveals.forEach(el => {
+        const delay = parseInt(el.dataset.delay) || 0;
+        setTimeout(() => el.classList.add('visible'), delay);
+      });
+    }, 1800);
+  }
+
+  envelope.addEventListener('click', openEnvelope);
+  envelope.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    openEnvelope();
   });
 
+  // ═══════════════════════
   // ── Petal system ──
+  // ═══════════════════════
   const petalColors = [
     { fill: '#d4738c', opacity: 0.7 },
     { fill: '#a4294e', opacity: 0.6 },
@@ -405,6 +942,30 @@ body {
     petal.style.animation = `fall ${duration}s linear forwards`;
     petal.style.animationDelay = Math.random() * 2 + 's';
 
+    // Chime on tap
+    petal.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playChime();
+      // Visual burst — scale up briefly
+      petal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+      petal.style.transform += ' scale(1.8)';
+      petal.style.opacity = '0';
+      setTimeout(() => {
+        if (petal.parentNode) petal.parentNode.removeChild(petal);
+      }, 300);
+    });
+
+    petal.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      playChime();
+      petal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+      petal.style.opacity = '0';
+      setTimeout(() => {
+        if (petal.parentNode) petal.parentNode.removeChild(petal);
+      }, 300);
+    });
+
     document.body.appendChild(petal);
 
     setTimeout(() => {
@@ -420,7 +981,9 @@ body {
   // Continuous petals
   setInterval(createPetal, isMobile ? 1200 : 700);
 
+  // ═══════════════════════
   // ── Sparkle canvas ──
+  // ═══════════════════════
   const canvas = document.getElementById('sparkle-canvas');
   const ctx = canvas.getContext('2d');
   let sparkles = [];
@@ -486,7 +1049,6 @@ body {
       ctx.fillStyle = `rgba(255, 248, 230, ${s.alpha})`;
       ctx.fill();
 
-      // cross sparkle for brighter ones
       if (s.alphaTarget > 0.6 && s.alpha > 0.3) {
         ctx.strokeStyle = `rgba(255, 248, 230, ${s.alpha * 0.4})`;
         ctx.lineWidth = 0.5;
@@ -504,12 +1066,13 @@ body {
   }
   requestAnimationFrame(drawSparkles);
 
+  // ═══════════════════════
   // ── Parallax tilt ──
+  // ═══════════════════════
   const card = document.getElementById('card');
-  const wrapper = document.querySelector('.card-wrapper');
+  const wrapper = document.getElementById('card-wrapper');
 
   if (!isMobile) {
-    // Mouse parallax
     wrapper.addEventListener('mouseenter', () => { hoverActive = true; });
     wrapper.addEventListener('mouseleave', () => {
       hoverActive = false;
@@ -527,11 +1090,7 @@ body {
       card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     });
   } else {
-    // Gyroscope tilt for mobile
-    let gyroAvailable = false;
-
     function handleOrientation(e) {
-      if (!gyroAvailable) gyroAvailable = true;
       const beta = Math.max(-15, Math.min(15, e.beta || 0));
       const gamma = Math.max(-15, Math.min(15, e.gamma || 0));
       const rotateX = (beta / 15) * 4;
@@ -541,7 +1100,6 @@ body {
 
     if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
-      // iOS 13+ requires permission
       document.body.addEventListener('touchstart', function iosPerm() {
         DeviceOrientationEvent.requestPermission().then(state => {
           if (state === 'granted') {
@@ -554,7 +1112,6 @@ body {
       window.addEventListener('deviceorientation', handleOrientation);
     }
 
-    // Touch "hover" effect
     card.addEventListener('touchstart', () => { hoverActive = true; }, { passive: true });
     card.addEventListener('touchend', () => { hoverActive = false; }, { passive: true });
   }
